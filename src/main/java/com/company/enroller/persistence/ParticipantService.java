@@ -3,12 +3,16 @@ package com.company.enroller.persistence;
 import com.company.enroller.model.Participant;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 
 @Component("participantService")
 public class ParticipantService {
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     DatabaseConnector connector;
 
@@ -37,6 +41,9 @@ public class ParticipantService {
     }
 
     public Participant add(Participant participant) {
+        String hashedPassword = passwordEncoder.encode(participant.getPassword());
+        participant.setPassword(hashedPassword);
+
         Transaction transaction = connector.getSession().beginTransaction();
         connector.getSession().save(participant);
         transaction.commit();

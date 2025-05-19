@@ -1,7 +1,7 @@
 package com.company.enroller.persistence;
 
 import com.company.enroller.model.Meeting;
-import org.hibernate.Session;
+import com.company.enroller.model.Participant;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Component;
@@ -54,4 +54,51 @@ public class MeetingService {
 		transaction.commit();
 	}
 
+	public void getParticipants(Long meetingId) {
+		Meeting meeting = connector.getSession().get(Meeting.class, meetingId);
+		if (meeting == null) {
+			throw new IllegalArgumentException("Meeting not found");
+		}
+		meeting.getParticipants();
+	}
+
+	public void addParticipantToMeeting(Long meetingId, String login) {
+		Transaction transaction = connector.getSession().beginTransaction();
+
+		Meeting meeting = connector.getSession().get(Meeting.class, meetingId);
+		Participant participant = connector.getSession()
+				.createQuery("FROM Participant WHERE login = :login", Participant.class)
+				.setParameter("login", login)
+				.uniqueResult();
+
+		if (meeting == null || participant == null) {
+			transaction.rollback();
+			throw new IllegalArgumentException("Meeting or participant not found");
+		}
+
+		meeting.getParticipants().add(participant);
+		connector.getSession().merge(meeting);
+
+		transaction.commit();
+	}
+
+	public void removeParticipantFromMeeting(Long meetingId, String login) {
+		Transaction transaction = connector.getSession().beginTransaction();
+
+		Meeting meeting = connector.getSession().get(Meeting.class, meetingId);
+		Participant participant = connector.getSession()
+				.createQuery("FROM Participant WHERE login = :login", Participant.class)
+				.setParameter("login", login)
+				.uniqueResult();
+
+		if (meeting == null || participant == null) {
+			transaction.rollback();
+			throw new IllegalArgumentException("Meeting or participant not found");
+		}
+
+		meeting.getParticipants().remove(participant);
+		connector.getSession().merge(meeting);
+
+		transaction.commit();
+	}
 }
